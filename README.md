@@ -76,4 +76,4 @@ Figure 2 shows that if a region has soil type 3, it always has forest type 3 or 
 
 [7] Burrough, P. A. and McDonell, R.A., 1998. Principles of Geographical Information Systems (Oxford University Press, New York), p. 190.
 
-[8] Hillshade: http://resources.esri.com/help/9.3/arcgisdesktop/com/gp_toolref/spatial_analyst_tools/how_hillshade_works.htm
+[8] Hillshade Algorithm: http://resources.esri.com/help/9.3/arcgisdesktop/com/gp_toolref/spatial_analyst_tools/how_hillshade_works.htm
