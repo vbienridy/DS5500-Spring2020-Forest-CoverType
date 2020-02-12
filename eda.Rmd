@@ -1,0 +1,111 @@
+---
+title: "eda notebook"
+output: html_notebook
+---
+
+```{r}
+# This R notebook is for exploratory data analysis to providen evidence for feature engineering
+# Date: 02/10/2020
+
+# set working directory
+setwd("D:/NEU/DS 5500/code")
+set.seed(5500)
+```
+
+```{r}
+# load data
+library(data.table)
+train_eda <- fread("data/train.csv")
+test_eda <- fread("data/test.csv")
+names(train_eda)
+names(test_eda)
+```
+
+```{r}
+# exploratory data analysis for training set
+# convert dummy variables into normal variables
+train_eda$WA <- as.factor(as.matrix(train_eda[,12:15])%*%as.matrix(1:4))
+train_eda$ST<-as.factor(as.matrix(train_eda[,16:55])%*%as.matrix(1:40))
+train_eda<-train_eda[,-c(12:55)]
+test_eda$WA <- as.factor(as.matrix(test_eda[,12:15])%*%as.matrix(1:4))
+test_eda$ST<-as.factor(as.matrix(test_eda[,16:55])%*%as.matrix(1:40))
+test_eda<-test_eda[,-c(12:55)]
+```
+
+```{r}
+# variables renaming for convenience
+names(train_eda)[5:14] <- c("HDTH","VDTH","HDTR","H9am","Hnoon","H3pm","HDTFP","CT","WA","ST")
+names(test_eda)[5:13] <- c("HDTH","VDTH","HDTR","H9am","Hnoon","H3pm","HDTFP","WA","ST")
+attach(train_eda) # add all variables to the environment
+```
+
+```{r}
+# correlation of predictor variables and cover type
+library(corrgram)
+corrgram(train_eda[,-c("Id","WA","ST")], order=TRUE, lower.panel=panel.shade, upper.panel=NULL, text.panel=panel.txt, cex=1) # variables ordered using PCA
+
+cor(Aspect, H3pm)
+cor(H3pm, Hnoon)
+cor(HDTH, VDTH)
+cor(HDTR, Elevation)
+cor(H3pm, H9am)
+```
+
+```{r}
+# import libraries and set default parameters
+library(ggplot2)
+library(RColorBrewer)
+palette <- scale_fill_brewer(palette = "Paired")
+color <- scale_color_brewer(palette= "Paired") # set figure color palette
+theme <- theme(text=element_text(size=20), plot.title=element_text(hjust=0.5), legend.key.size=unit(1, 'cm'), axis.title.x=element_text(size=18), axis.title.y=element_text(size=18)) # set figure theme
+```
+
+```{r}
+# draw scatter plot for Elevation, HDTR with Cover_Type
+ggplot(train_eda) + geom_point(aes(x=Elevation, y=HDTR, color=as.factor(CT)), size=1.5)+ color + labs(title='Scatter plot for Elevation, HDTR and Cover_Type', color='Cover_Type') + theme
+```
+
+```{r}
+# draw scatter plot for Elevation, HDTR with Cover_Type = 2 or 5 
+ggplot(subset(train_eda, train_eda$CT==2|train_eda$CT==5)) + geom_point(aes(x=Elevation, y=HDTR, color=as.factor(CT)), size=1.5) + labs(title='Scatter plot for Elevation, HDTR and Cover_Type', color='Cover_Type') + theme + scale_color_manual(values=c("blue","red"))
+```
+
+```{r}
+# draw scatter plot for VDTH, HDTH to visualize their correlation
+ggplot(train_eda) + geom_point(aes(x=VDTH, y=HDTH, color=as.factor(CT)), size=1.5) + color + labs(title='Scatter plot of VDTH, HDTH and Cover_Type', color='Cover_Type') + theme
+```
+
+```{r}
+# draw scatter plot for H3pm and Hnoon with Cover_Type
+ggplot(train_eda)+geom_point(aes(x=H3pm, y=Hnoon,color=as.factor(CT)),size=1.5)+color+labs(title='Scatter diagram of H3pm VS Hnoon',color='Cover_Type')+theme
+```
+
+```{r}
+# frequency table for categorical variables 
+table(CT) # ftable
+table(ST)
+table(WA)
+table(CT,WA)
+table(CT,ST)
+table(WA,ST)
+ftable(VDTH < 0, CT)
+```
+
+```{r}
+# draw bar plots for Soil_Type and Cover_Type
+ggplot(train_eda) + geom_bar(aes(ST, fill=as.factor(CT))) + palette + labs(title='Bar plot for Soil_Type and Cover_Type', fill='Cover_Type') + theme + labs(x='Soil_Type')
+```
+
+```{r}
+# draw bar plots for Wilderness_Area and Cover_Type
+ggplot(train_eda) + geom_bar(aes(WA, fill=as.factor(CT)), width=0.7) + palette + labs(title='Bar plot for Wilderness_Area and Cover_Type', fill='Cover_Type') + theme + labs(x='Wilderness_Area')
+```
+
+```{r}
+# draw bar plots for Soil_Type and Wilderness_Area
+ggplot(train_eda) + geom_bar(aes(ST, fill=as.factor(WA))) + scale_fill_brewer(palette="Spectral") + labs(title='Bar plot for Soil_Type and Wilderness_Area', fill='Wilderness_Area') + theme + labs(x='Soil_Type')
+```
+
+```{r}
+# exploratory data analysis for test set
+```

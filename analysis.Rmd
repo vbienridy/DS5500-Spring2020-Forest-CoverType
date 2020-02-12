@@ -1,0 +1,235 @@
+---
+title: "analysis notebook"
+output: html_notebook
+---
+
+```{r}
+# This R notebook is for feature engineering and modeling analysis
+# Date: 02/20/2020
+
+# set working directory
+setwd("D:/NEU/DS 5500/code")
+set.seed(5500)
+```
+
+```{r}
+# load data
+library(data.table)
+library(readr)
+train <- fread("data/train.csv")
+test <- fread("data/test.csv")
+# names(train)
+# names(test)
+```
+
+```{r}
+# variable renaming for convenience
+names(train)[5:11] <- c("HDTH","VDTH","HDTR","H9am","Hnoon","H3pm","HDTFP")  
+names(test)[5:11] <- c("HDTH","VDTH","HDTR","H9am","Hnoon","H3pm","HDTFP")
+```
+
+```{r}
+# data imputation for Hillshade (missing value is recorded as 0 in dataset) 
+# find number of zero Hillshade values in the training set
+sum(train$H9am == 0) # 1
+sum(train$H3pm == 0) # 88
+sum(train$Hnoon == 0) # 0
+```
+
+```{r}
+# imputation with linear regression
+mistrain <- subset(train, train$H3pm==0) 
+whotrain <- train[-mistrain$Id, ]
+lr <- lm(H3pm~., data=whotrain[,-"Id"])
+mistrain$H3pm <- predict(lr, newdata=mistrain[, -c("Id","H3pm")])
+train <- rbind.data.frame(mistrain, whotrain)
+write.csv(train,"data/output/train_H3pm_lr.csv") # save to local csv file
+```
+
+```{r}
+# imputation with random forest model
+library(randomForest)
+mistrain <- subset(train, train$H3pm==0)
+whotrain <- train[-mistrain$Id, ]
+rf <- randomForest(H3pm~., data=whotrain[, -"Id"], type="regression", ntree=100)
+varImpPlot(rf) # most important variables are Aspect, H9am, Hnoon, Slope
+mistrain$H3pm <- predict(rf, newdata=mistrain[, -c("Id","H3pm")])
+
+train <- rbind.data.frame(mistrain, whotrain)
+write.csv(train, "data/output/train_H3pm_randomForest.csv") # save to local csv file
+```
+
+```{r}
+## imputation with xgboost model
+library(xgboost)
+library(Matrix)
+mistrain<-subset(train, train$H3pm==0)
+whotrain<-train[-mistrain$Id, ]
+sparse_matrix_H3pm_train <- sparse.model.matrix(~.-1, data=whotrain[, -c("Id","H3pm")])
+sparse_matrix_H3pm_test <- sparse.model.matrix(~.-1, data=mistrain[, -c("Id","H3pm")])
+bst <- xgboost(data=sparse_matrix_H3pm_train, label=whotrain$H3pm, max.depth=8, max_delta_step=6, colsample_bytree=0.9, colsample_bylevel=0.8, min_child_weight=4, eta=0.05, gamma=2, subsampe=0.95, nthread=4, nround=1200, objective="reg:linear")
+mistrain$H3pm <- predict(bst, sparse_matrix_H3pm_test)
+
+train <- rbind.data.frame(mistrain, whotrain)
+write.csv(train, "data/output/train_H3pm_xgboost.csv") # save to local csv file
+```
+
+```{r}
+# Or use only Aspect, Slope, H9am, Hnoon features to do regression
+# After data imputation, the Ids may be reordered
+# check whether there are any records with H3pm=0
+sum(train$H3pm == 0)
+```
+
+```{r}
+# feature engineering
+# linear regression for VDTH and HDTH, VDTH as target variable
+library(modelr)
+fit1 <- lm(VDTH ~ HDTH, data=train)
+fit2 <- lm(VDTH ~ HDTH-1, data=train)
+coef(fit1)
+coef(fit2)
+```
+
+```{r}
+# create new variables associated with vertical distances
+train$Highwater = train$VDTH < 0
+test$Highwater = test$VDTH < 0
+
+train$EVDtH = train$Elevation-train$VDTH
+test$EVDtH = test$Elevation-test$VDTH
+
+train$EHDtH = train$Elevation-train$HDTH*0.2
+test$EHDtH = test$Elevation-test$HDTH*0.2
+
+# create new variables associated with horizontal distances
+train$DTH = (train$HDTH**2+train$VDTH**2)**0.5
+test$DTH = (test$HDTH**2+test$VDTH**2)**0.5
+
+train$tan = (train$VDTH+0.000000000001)/(train$HDTH+0.000000000001)
+test$tan = (test$VDTH+0.000000000001)/(test$HDTH+0.000000000001)
+
+# create new variables associated with distances to hydrology
+train$HF1 = train$HDTH+train$HDTFP
+test$HF1 = test$HDTH+test$HDTFP
+
+train$HF2 = abs(train$HDTH-train$HDTFP)
+test$HF2 = abs(test$HDTH-test$HDTFP)
+
+train$HF3 = (train$HDTH+0.000000000001)/(train$HDTFP+0.000000000001)
+test$HF3 = (test$HDTH+0.000000000001)/(test$HDTFP+0.000000000001)
+
+train$HR1 = train$HDTH+train$HDTR
+test$HR1 = test$HDTH+test$HDTR
+
+train$HR2 = abs(train$HDTH-train$HDTR)
+test$HR2 = abs(test$HDTH-test$HDTR)
+
+train$HR3 = (train$HDTH+0.000000000001)/(train$HDTR+0.000000000001)
+test$HR3 = (test$HDTH+0.000000000001)/(test$HDTR+0.000000000001)
+
+train$FR1 = train$HDTFP+train$HDTR
+test$FR1 = test$HDTFP+test$HDTR
+
+train$FR2 = abs(train$HDTFP-train$HDTR)
+test$FR2 = abs(test$HDTFP-test$HDTR)
+
+train$FR3 = (train$HDTFP+0.000000000001)/(train$HDTR+0.000000000001)
+test$FR3 = (test$HDTFP+0.000000000001)/(test$HDTR+0.000000000001)
+write.csv(train, "data/output/train_processed.csv", row.names=FALSE) # write_csv from readr
+write.csv(test, "data/output/test_processed.csv", row.names=FALSE) # fwrite from data.table 
+```
+
+```{r}
+# model training
+# remove Id column and Cover_Type column
+train_data <- train[, -"Id"]
+test_data <- test[, -"Id"] # test_data <- test[, -"Id"]
+
+# turn train and test dataset into dgCMatrix form
+sparse_matrix_train <- sparse.model.matrix(Cover_Type~.-1, data=train_data)
+sparse_matrix_test <- sparse.model.matrix(~.-1, data=test_data)
+colnames(sparse_matrix_train)
+colnames(sparse_matrix_test)
+output_vector <- as.numeric(train_data$Cover_Type)-1
+```
+
+```{r}
+# train random forest model
+rf <- randomForest(as.factor(Cover_Type)~., data=train_data, type="class", ntree=200)
+test_rf <- test_data[,]
+test_rf$Cover_Type <- predict(rf, newdata=test_data) # test_data[,-"Id"]?
+ftable(test_rf$Cover_Type)
+write.csv(test_rf[,c("Id","Cover_Type")], "data/output/randomForest.csv")
+
+test_labeled <- fread("data/test/test.csv") # test set with true class label
+mean(test_labeled$Cover_Type == test_rf$Cover_Type)
+```
+
+```{r}
+# train xgboost model
+bst <- xgboost(data=sparse_matrix_train, label=output_vector, max.depth=25, colsample_bytree=1, eta=0.7, gamma=1, subsampe=1, nthread=2, nround=40, num_class=7, objective="multi:softmax")
+test_xgb <- test_data[,]
+test_xgb$Cover_Type <- predict(bst, sparse_matrix_test) + 1
+ftable(test_xgb$Cover_Type)
+# test_xgb$Id <- test$Id
+write.csv(test_xgb[, c("Id","Cover_Type")], "data/output/xgboost.csv")
+
+importance <- xgb.importance(feature_names=sparse_matrix_train@Dimnames[[2]], model=bst)
+head(importance) # feature importance table
+
+test_labeled <- fread("data/test/test.csv") # test set with true class label
+mean(test_labeled$Cover_Type == test_xgb$Cover_Type) # accuracy
+```
+
+```{r}
+# train extremely randomized trees model
+options(java.parameters = "-Xmx4g")
+library(extraTrees)
+et = extraTrees(train_data[, -"Cover_Type"], train_data$CoverType)
+test_et <- test_data[,]
+test_et$Cover_Type <- predict(et, test_data) # probability=TRUE produces probabilities
+ftable(test_et$Cover_Type)
+write.csv(test_et[, c("Id","Cover_Type")], "data/output/extraTree.csv")
+
+test_labeled <- fread("data/test/test.csv") # test set with true class label
+mean(test_labeled$Cover_Type == test_et$Cover_Type)
+
+write.csv(train, "data/output/train.csv") # check file names
+write.csv(test, "data/output/test.csv")
+# Or use python sklearn ExtraTreesClassifier method to train
+# execute extratree.ipynb and load the result csv file
+test_extra <- fread("data/output/extratree.csv")
+ftable(test_extra$Cover_Type)
+test_labeled <- fread("data/test/test.csv") # test set with true class label
+mean(test_labeled$Cover_Type == test_extra$Cover_Type) # accuracy
+```
+
+```{r}
+# compute accuracy for each class
+get_accuracy_for_label <- function(test_clf, test_labeled) {
+  for (label in 1:7) {
+    acc <- sum((test_clf$Cover_Type == label) & (test_clf$Cover_Type == test_labeled$Cover_Type))
+    total <- sum(test_labeled$Cover_Type == label)
+    print(sprintf("The accuracy for class label = %d is %.4f", label, acc/total))
+  }
+} 
+
+get_accuracy_for_label(test_xgb, test_labeled)
+
+# compute confusion matrix
+library(caret)
+confusionMatrix(as.factor(test_xgb$Cover_Type), as.factor(test_labeled$Cover_Type))
+```
+
+```{r}
+# model plots
+
+# cross validation
+
+# train weak classifiers
+
+# combine weak classifiers
+
+# model performance evaluation and error analysis
+```
