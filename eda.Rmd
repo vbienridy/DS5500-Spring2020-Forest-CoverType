@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
-# This R notebook is for exploratory data analysis to providen evidence for feature engineering
+# This R notebook is for exploratory data analysis to provide evidence for feature engineering
 # Date: 02/10/2020
 
 # set working directory
@@ -54,7 +54,7 @@ cor(H3pm, H9am)
 ```{r}
 # import libraries and set default parameters
 library(ggplot2)
-library(RColorBrewer)
+# library(RColorBrewer)
 palette <- scale_fill_brewer(palette = "Paired")
 color <- scale_color_brewer(palette= "Paired") # set figure color palette
 theme <- theme(text=element_text(size=20), plot.title=element_text(hjust=0.5), legend.key.size=unit(1, 'cm'), axis.title.x=element_text(size=18), axis.title.y=element_text(size=18)) # set figure theme
@@ -89,6 +89,11 @@ table(CT,WA)
 table(CT,ST)
 table(WA,ST)
 ftable(VDTH < 0, CT)
+```
+
+```{r}
+1919+1974+2043+2109+1960+2016+1960 # 13981
+241+186+117+51+200+144+200 # 1139
 ```
 
 ```{r}

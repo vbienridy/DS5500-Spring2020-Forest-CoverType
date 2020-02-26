@@ -1,0 +1,156 @@
+---
+title: "strata Notebook"
+output: html_notebook
+---
+
+
+```{r}
+# This R notebook is for spliting train set and test set into different strata
+# Date: 02/20/2020
+
+# set working directory
+setwd("D:/NEU/DS 5500/code")
+set.seed(5500)
+
+# load data, convert dummy variables and rename variables
+library(data.table)
+train <- fread("data/output/train_processed.csv")
+test <- fread("data/output/test_processed.csv")
+
+train$Wilderness_Area <- as.factor(as.matrix(train[, 12:15]) %*% as.matrix(1:4))
+train$Soil_Type <- as.factor(as.matrix(train[, 16:55]) %*% as.matrix(1:40))
+train <- train[, -c(12:55)]
+names(train)[27:28] <- c("WA", "ST")
+
+test$Wilderness_Area <- as.factor(as.matrix(test[, 12:15]) %*% as.matrix(1:4))
+test$Soil_Type <- as.factor(as.matrix(test[, 16:55]) %*% as.matrix(1:40))
+test <- test[, -c(12:55)]
+names(test)[26:27] <- c("WA", "ST")
+
+```
+
+```{r}
+# stratify train set
+train1<-subset(train,WA==1&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+train2<-subset(train,WA==2&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+train3<-subset(train,WA==3&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+train4<-subset(train,WA==4&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+
+train5<-subset(train,WA==1&(ST==10|ST==11))
+train6<-subset(train,WA==2&(ST==10|ST==11))
+train7<-subset(train,WA==3&(ST==10|ST==11))
+train8<-subset(train,WA==4&(ST==10|ST==11))
+
+train9<-subset(train,WA==1&(ST==12|ST==13|ST==16))
+train10<-subset(train,WA==2&(ST==12|ST==13|ST==16))
+train11<-subset(train,WA==3&(ST==12|ST==13|ST==16))
+train12<-subset(train,WA==4&(ST==12|ST==13|ST==16))
+
+train13<-subset(train,WA==1&(ST==20|ST==22|ST==24))
+train14<-subset(train,WA==2&(ST==20|ST==22|ST==24))
+train15<-subset(train,WA==3&(ST==20|ST==22|ST==24))
+train16<-subset(train,WA==4&(ST==20|ST==22|ST==24))
+
+train17<-subset(train,WA==1&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+train18<-subset(train,WA==2&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+train19<-subset(train,WA==3&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+train20<-subset(train,WA==4&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+
+train21<-subset(train,WA==1&ST==35)
+train22<-subset(train,WA==2&ST==35)
+train23<-subset(train,WA==3&ST==35)
+train24<-subset(train,WA==4&ST==35)
+
+train25<-subset(train,WA==1&(ST==38|ST==39|ST==40))
+train26<-subset(train,WA==2&(ST==38|ST==39|ST==40))
+train27<-subset(train,WA==3&(ST==38|ST==39|ST==40))
+train28<-subset(train,WA==4&(ST==38|ST==39|ST==40))
+
+# combine the rest
+trainout<-subset(train,ST==7|ST==8|ST==9|ST==15|ST==18|ST==19|ST==21|ST==25|ST==26|ST==27|ST==28|ST==34|ST==36|ST==37)
+
+trainout<-rbind.data.frame(trainout,train10,train21,train22) # ?
+# some strata have zero data points
+
+# stratify test set
+test1<-subset(test,WA==1&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+test2<-subset(test,WA==2&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+test3<-subset(test,WA==3&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+test4<-subset(test,WA==4&(ST==1|ST==2|ST==3|ST==4|ST==5|ST==6|ST==14|ST==17))
+
+test5<-subset(test,WA==1&(ST==10|ST==11))
+test6<-subset(test,WA==2&(ST==10|ST==11))
+test7<-subset(test,WA==3&(ST==10|ST==11))
+test8<-subset(test,WA==4&(ST==10|ST==11))
+
+test9<-subset(test,WA==1&(ST==12|ST==13|ST==16))
+test10<-subset(test,WA==2&(ST==12|ST==13|ST==16))
+test11<-subset(test,WA==3&(ST==12|ST==13|ST==16))
+test12<-subset(test,WA==4&(ST==12|ST==13|ST==16))
+
+test13<-subset(test,WA==1&(ST==20|ST==22|ST==24))
+test14<-subset(test,WA==2&(ST==20|ST==22|ST==24))
+test15<-subset(test,WA==3&(ST==20|ST==22|ST==24))
+test16<-subset(test,WA==4&(ST==20|ST==22|ST==24))
+
+test17<-subset(test,WA==1&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+test18<-subset(test,WA==2&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+test19<-subset(test,WA==3&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+test20<-subset(test,WA==4&(ST==23|ST==29|ST==30|ST==31|ST==32|ST==33))
+
+test21<-subset(test,WA==1&ST==35)
+test22<-subset(test,WA==2&ST==35)
+test23<-subset(test,WA==3&ST==35)
+test24<-subset(test,WA==4&ST==35)
+
+test25<-subset(test,WA==1&(ST==38|ST==39|ST==40))
+test26<-subset(test,WA==2&(ST==38|ST==39|ST==40))
+test27<-subset(test,WA==3&(ST==38|ST==39|ST==40))
+test28<-subset(test,WA==4&(ST==38|ST==39|ST==40))
+
+# combine the rest
+testout<-subset(test,ST==7|ST==8|ST==9|ST==15|ST==18|ST==19|ST==21|ST==25|ST==26|ST==27|ST==28|ST==34|ST==36|ST==37)
+
+testout<-rbind.data.frame(testout,test10,test21,test22)
+# some strata have zero data points
+
+# save to local files
+write.csv(train3,"data/output/strata/train3.csv")
+write.csv(train4,"data/output/strata/train4.csv")
+write.csv(train7,"data/output/strata/train7.csv")
+write.csv(train8,"data/output/strata/train8.csv")
+write.csv(train9,"data/output/strata/train9.csv")
+write.csv(train11,"data/output/strata/train11.csv")
+write.csv(train12,"data/output/strata/train12.csv")
+write.csv(train13,"data/output/strata/train13.csv")
+write.csv(train14,"data/output/strata/train14.csv")
+write.csv(train15,"data/output/strata/train15.csv")
+write.csv(train17,"data/output/strata/train17.csv")
+write.csv(train18,"data/output/strata/train18.csv")
+write.csv(train19,"data/output/strata/train19.csv")
+write.csv(train23,"data/output/strata/train23.csv")
+write.csv(train25,"data/output/strata/train25.csv")
+write.csv(train26,"data/output/strata/train26.csv")
+write.csv(train27,"data/output/strata/train27.csv")
+write.csv(trainout,"data/output/strata/trainout.csv")
+
+write.csv(test3,"data/output/strata/test3.csv")
+write.csv(test4,"data/output/strata/test4.csv")
+write.csv(test7,"data/output/strata/test7.csv")
+write.csv(test8,"data/output/strata/test8.csv")
+write.csv(test9,"data/output/strata/test9.csv")
+write.csv(test11,"data/output/strata/test11.csv")
+write.csv(test12,"data/output/strata/test12.csv")
+write.csv(test13,"data/output/strata/test13.csv")
+write.csv(test14,"data/output/strata/test14.csv")
+write.csv(test15,"data/output/strata/test15.csv")
+write.csv(test17,"data/output/strata/test17.csv")
+write.csv(test18,"data/output/strata/test18.csv")
+write.csv(test19,"data/output/strata/test19.csv")
+write.csv(test23,"data/output/strata/test23.csv")
+write.csv(test25,"data/output/strata/test25.csv")
+write.csv(test26,"data/output/strata/test26.csv")
+write.csv(test27,"data/output/strata/test27.csv")
+write.csv(testout,"data/output/strata/testout.csv")
+
+```
